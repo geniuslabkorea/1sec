@@ -38,7 +38,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "창업·벤처": "bg-pink-100 text-pink-700",
 };
 
-const FREE_LIMIT = process.env.NODE_ENV === "development" ? 9999 : 5;
+const FREE_LIMIT = 9999;
 
 const MOCK_RESULT: AnalysisResult = {
   businessInfo: {
