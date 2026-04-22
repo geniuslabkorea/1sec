@@ -54,26 +54,69 @@ async function parseBusinessRegistration(fileBuffer: Buffer, mimeType: string) {
   return JSON.parse(jsonMatch[0]);
 }
 
-function scoreGrant(item: BizinfoItem, industry: string, sector: string): number {
-  const text = `${item.bsnsSumryCn} ${item.trgetNm} ${item.hashtags} ${item.pldirSportRealmLclasCodeNm}`.toLowerCase();
-  const keywords = `${industry} ${sector}`.toLowerCase().split(/\s+/);
+// 주소에서 시/도 추출
+function extractRegion(address: string): string {
+  const regions = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+    "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+  return regions.find((r) => address.includes(r)) ?? "";
+}
+
+function scoreGrant(
+  item: BizinfoItem,
+  industry: string,
+  sector: string,
+  businessType: string,
+  region: string
+): number {
+  const fullText = `${item.pblancNm} ${item.bsnsSumryCn} ${item.trgetNm} ${item.hashtags}`.toLowerCase();
+  const targetText = (item.trgetNm ?? "").toLowerCase();
+  const titleText = (item.pblancNm ?? "").toLowerCase();
 
   let score = 60;
+
+  // 1. 업종 키워드 매칭
+  const keywords = `${industry} ${sector}`.toLowerCase().split(/\s+/);
   for (const kw of keywords) {
-    if (kw.length > 1 && text.includes(kw)) score += 8;
+    if (kw.length > 1 && fullText.includes(kw)) score += 8;
   }
 
-  // 마감일 임박할수록 높은 우선순위
+  // 2. 법인/개인 매칭
+  const isCorpGrant = targetText.includes("법인");
+  const isPersonGrant = targetText.includes("개인사업자") || targetText.includes("개인 사업자");
+  const isMyType = businessType.includes("법인") ? isCorpGrant : isPersonGrant;
+  const isOppositeType = businessType.includes("법인") ? isPersonGrant : isCorpGrant;
+
+  if (isMyType) score += 15;
+  if (isOppositeType && !isMyType) score -= 20; // 반대 타입 전용 공고 페널티
+
+  // 3. 지역 매칭
+  if (region) {
+    const titleHasRegion = titleText.includes(region);
+    const contentHasRegion = fullText.includes(region);
+
+    // 다른 지역 전용 공고 페널티
+    const otherRegions = ["서울", "부산", "대구", "인천", "광주", "대전", "울산",
+      "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주", "제주도", "세종"]
+      .filter((r) => r !== region);
+    const hasOtherRegion = otherRegions.some((r) => titleText.startsWith(`[${r}`) || titleText.includes(`[${r}]`));
+
+    if (titleHasRegion) score += 20; // 내 지역 공고 우선
+    else if (contentHasRegion) score += 10;
+    if (hasOtherRegion) score -= 25; // 타 지역 공고 페널티
+  }
+
+  // 4. 마감일 임박
   if (item.reqstBeginEndDe) {
     const parts = item.reqstBeginEndDe.split("~");
     if (parts[1]) {
       const deadline = new Date(parts[1].trim().replace(/\./g, "-"));
       const daysLeft = (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
       if (daysLeft > 0 && daysLeft < 30) score += 5;
+      if (daysLeft < 0) score -= 50; // 마감 지난 공고 제외
     }
   }
 
-  return Math.min(score, 99);
+  return Math.max(0, Math.min(score, 99));
 }
 
 function mapCategory(lclasNm: string): string {
@@ -152,6 +195,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 4. 스코어링 & 정렬
+    const region = extractRegion(businessInfo.address ?? "");
     const grants = unique
       .map((item) => ({
         id: item.pblancId,
@@ -160,10 +204,17 @@ export async function POST(req: NextRequest) {
         amount: "-",
         deadline: parseDeadline(item.reqstBeginEndDe),
         category: mapCategory(item.pldirSportRealmLclasCodeNm),
-        matchScore: scoreGrant(item, businessInfo.industry ?? "", businessInfo.sector ?? ""),
+        matchScore: scoreGrant(
+          item,
+          businessInfo.industry ?? "",
+          businessInfo.sector ?? "",
+          businessInfo.businessType ?? "",
+          region
+        ),
         description: stripHtml(item.bsnsSumryCn ?? ""),
         url: item.rceptEngnHmpgUrl || item.pblancUrl,
       }))
+      .filter((g) => g.matchScore > 20) // 너무 낮은 매칭 제외
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 50);
 
