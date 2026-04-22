@@ -31,11 +31,14 @@ type AnalysisResult = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "고용·인력": "bg-purple-100 text-purple-700",
-  "기술·R&D": "bg-blue-100 text-blue-700",
-  "자금·융자": "bg-green-100 text-green-700",
-  "수출·글로벌": "bg-orange-100 text-orange-700",
-  "창업·벤처": "bg-pink-100 text-pink-700",
+  "자금·융자":    "bg-green-100 text-green-700",
+  "고용·인력":    "bg-purple-100 text-purple-700",
+  "기술·R&D":    "bg-blue-100 text-blue-700",
+  "수출·글로벌":  "bg-orange-100 text-orange-700",
+  "내수·판로":    "bg-yellow-100 text-yellow-700",
+  "창업·벤처":    "bg-pink-100 text-pink-700",
+  "경영·컨설팅":  "bg-teal-100 text-teal-700",
+  "기타":         "bg-slate-100 text-slate-600",
 };
 
 const FREE_LIMIT = 9999;

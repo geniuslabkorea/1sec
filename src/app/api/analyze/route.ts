@@ -122,9 +122,11 @@ function scoreGrant(
 function mapCategory(lclasNm: string): string {
   if (lclasNm.includes("자금") || lclasNm.includes("융자")) return "자금·융자";
   if (lclasNm.includes("인력") || lclasNm.includes("고용")) return "고용·인력";
-  if (lclasNm.includes("기술") || lclasNm.includes("R&D")) return "기술·R&D";
-  if (lclasNm.includes("수출") || lclasNm.includes("글로벌")) return "수출·글로벌";
-  if (lclasNm.includes("창업")) return "창업·벤처";
+  if (lclasNm.includes("기술") || lclasNm.includes("R&D") || lclasNm.includes("연구")) return "기술·R&D";
+  if (lclasNm.includes("수출") || lclasNm.includes("글로벌") || lclasNm.includes("해외")) return "수출·글로벌";
+  if (lclasNm.includes("내수") || lclasNm.includes("판로") || lclasNm.includes("유통")) return "내수·판로";
+  if (lclasNm.includes("창업") || lclasNm.includes("벤처")) return "창업·벤처";
+  if (lclasNm.includes("경영") || lclasNm.includes("컨설팅")) return "경영·컨설팅";
   return "기타";
 }
 
@@ -173,10 +175,14 @@ export async function POST(req: NextRequest) {
     const fetches = await Promise.allSettled([
       fetchGrants({ numOfRows: 100 }),                                   // 전체 최신
       fetchGrants({ numOfRows: 100, pageNo: 2 }),                        // 2페이지
-      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0001" }),     // 자금
-      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0002" }),     // 인력
-      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0003" }),     // 기술
-      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0006" }),     // 창업
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0001" }),     // 자금·융자
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0002" }),     // 인력·고용
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0003" }),     // 기술·R&D
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0004" }),     // 수출·글로벌
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0005" }),     // 내수·판로
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0006" }),     // 창업·벤처
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0007" }),     // 경영·컨설팅
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0008" }),     // 기타
       hashtags
         ? fetchGrants({ numOfRows: 100, hashtags })
         : Promise.resolve({ items: [], totalCount: 0 }),
