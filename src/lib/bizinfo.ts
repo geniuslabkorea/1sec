@@ -18,12 +18,14 @@ export type BizinfoItem = {
 };
 
 type BizinfoResponse = {
-  header: { resultCode: string; resultMsg: string };
-  body: {
-    items: { item: BizinfoItem | BizinfoItem[] } | "";
-    numOfRows: string;
-    pageNo: string;
-    totalCount: string;
+  response: {
+    header: { resultCode: string; resultMsg: string };
+    body: {
+      items: { item: BizinfoItem | BizinfoItem[] } | "" | null;
+      numOfRows: string;
+      pageNo: string;
+      totalCount: string;
+    };
   };
 };
 
@@ -55,20 +57,22 @@ export async function fetchGrants(params: {
 
   const json: BizinfoResponse = await res.json();
 
-  if (json.header.resultCode !== "00" && json.header.resultCode !== "0000") {
-    throw new Error(`기업마당 API 응답 오류: ${json.header.resultMsg}`);
+  const { header, body } = json.response;
+
+  if (header.resultCode !== "00" && header.resultCode !== "0000") {
+    throw new Error(`기업마당 API 응답 오류: ${header.resultMsg}`);
   }
 
-  if (!json.body.items || (json.body.items as unknown) === "") {
+  if (!body.items || !body.items || (body.items as unknown) === "") {
     return { items: [], totalCount: 0 };
   }
 
-  const raw = json.body.items.item;
+  const raw = (body.items as { item: BizinfoItem | BizinfoItem[] }).item;
   const items = Array.isArray(raw) ? raw : [raw];
 
   return {
     items,
-    totalCount: Number(json.body.totalCount),
+    totalCount: Number(body.totalCount),
   };
 }
 
