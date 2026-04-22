@@ -126,16 +126,22 @@ export async function POST(req: NextRequest) {
     // 2. 업종 기반 해시태그 생성
     const hashtags = extractHashtags(businessInfo.industry ?? "", businessInfo.sector ?? "");
 
-    // 3. 기업마당 API에서 공고 조회 (여러 분야 병렬)
-    const [generalGrants, hashtagGrants] = await Promise.allSettled([
-      fetchGrants({ numOfRows: 30 }),
-      hashtags ? fetchGrants({ hashtags, numOfRows: 20 }) : Promise.resolve({ items: [], totalCount: 0 }),
+    // 3. 기업마당 API 병렬 조회 — 전분야 + 분야별(자금/인력/기술/창업) + 해시태그
+    const fetches = await Promise.allSettled([
+      fetchGrants({ numOfRows: 100 }),                                   // 전체 최신
+      fetchGrants({ numOfRows: 100, pageNo: 2 }),                        // 2페이지
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0001" }),     // 자금
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0002" }),     // 인력
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0003" }),     // 기술
+      fetchGrants({ numOfRows: 100, searchLclasId: "LCLASS_0006" }),     // 창업
+      hashtags
+        ? fetchGrants({ numOfRows: 100, hashtags })
+        : Promise.resolve({ items: [], totalCount: 0 }),
     ]);
 
-    const allItems = [
-      ...(generalGrants.status === "fulfilled" ? generalGrants.value.items : []),
-      ...(hashtagGrants.status === "fulfilled" ? hashtagGrants.value.items : []),
-    ];
+    const allItems = fetches.flatMap((r) =>
+      r.status === "fulfilled" ? r.value.items : []
+    );
 
     // 중복 제거
     const seen = new Set<string>();
@@ -159,7 +165,7 @@ export async function POST(req: NextRequest) {
         url: item.rceptEngnHmpgUrl || item.pblancUrl,
       }))
       .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 20);
+      .slice(0, 50);
 
     return NextResponse.json({
       businessInfo,
