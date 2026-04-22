@@ -85,6 +85,23 @@ function mapCategory(lclasNm: string): string {
   return "기타";
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/p>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 150);
+}
+
 function parseDeadline(reqstBeginEndDe: string): string {
   if (!reqstBeginEndDe) return "-";
   const parts = reqstBeginEndDe.split("~");
@@ -138,10 +155,7 @@ export async function POST(req: NextRequest) {
         deadline: parseDeadline(item.reqstBeginEndDe),
         category: mapCategory(item.pldirSportRealmLclasCodeNm),
         matchScore: scoreGrant(item, businessInfo.industry ?? "", businessInfo.sector ?? ""),
-        description: (() => {
-          const plain = (item.bsnsSumryCn ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-          return plain.length > 120 ? plain.slice(0, 120) + "..." : plain;
-        })(),
+        description: stripHtml(item.bsnsSumryCn ?? ""),
         url: item.rceptEngnHmpgUrl || item.pblancUrl,
       }))
       .sort((a, b) => b.matchScore - a.matchScore)
