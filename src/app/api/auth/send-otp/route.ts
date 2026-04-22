@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SolapiMessageService } from "solapi";
 
-const solapi = new SolapiMessageService(
-  process.env.SOLAPI_API_KEY!,
-  process.env.SOLAPI_API_SECRET!
-);
+function getSolapi() {
+  return new SolapiMessageService(
+    process.env.SOLAPI_API_KEY!,
+    process.env.SOLAPI_API_SECRET!
+  );
+}
 
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    await solapi.send({
+    await getSolapi().send({
       to: normalizedPhone,
       from: process.env.SOLAPI_SENDER!,
       text: `[1초지원금] 인증번호는 ${code}입니다. 5분 이내에 입력해주세요.`,
