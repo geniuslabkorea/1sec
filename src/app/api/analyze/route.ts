@@ -138,7 +138,10 @@ export async function POST(req: NextRequest) {
         deadline: parseDeadline(item.reqstBeginEndDe),
         category: mapCategory(item.pldirSportRealmLclasCodeNm),
         matchScore: scoreGrant(item, businessInfo.industry ?? "", businessInfo.sector ?? ""),
-        description: item.bsnsSumryCn?.slice(0, 120) + (item.bsnsSumryCn?.length > 120 ? "..." : ""),
+        description: (() => {
+          const plain = (item.bsnsSumryCn ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+          return plain.length > 120 ? plain.slice(0, 120) + "..." : plain;
+        })(),
         url: item.rceptEngnHmpgUrl || item.pblancUrl,
       }))
       .sort((a, b) => b.matchScore - a.matchScore)
