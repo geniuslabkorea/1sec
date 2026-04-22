@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
 type Grant = {
@@ -233,12 +234,12 @@ function LockedSection({ count }: { count: number }) {
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
             무료 회원가입 후 매칭된<br />모든 지원금을 확인하세요
           </p>
-          <button className="w-full bg-slate-900 text-white font-black py-3.5 rounded-xl hover:bg-slate-800 transition-all mb-3">
+          <Link href="/signup" className="block w-full bg-slate-900 text-white font-black py-3.5 rounded-xl hover:bg-slate-800 transition-all mb-3 text-center">
             무료로 시작하기
-          </button>
-          <button className="w-full text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+          </Link>
+          <Link href="/login" className="block w-full text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors text-center">
             이미 계정이 있어요 →
-          </button>
+          </Link>
         </div>
       </div>
     </div>
