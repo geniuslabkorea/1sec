@@ -263,19 +263,22 @@ export default function ResultPage() {
   const [activeCategory, setActiveCategory] = useState("전체");
 
   const categories = useMemo(() => {
+    if (!result) return ["전체"];
     const cats = Array.from(new Set(result.grants.map((g) => g.category)));
     return ["전체", ...cats];
-  }, [result.grants]);
+  }, [result]);
 
-  const filteredGrants = useMemo(() =>
-    activeCategory === "전체"
+  const filteredGrants = useMemo(() => {
+    if (!result) return [];
+    return activeCategory === "전체"
       ? result.grants
-      : result.grants.filter((g) => g.category === activeCategory),
-    [result.grants, activeCategory]
-  );
+      : result.grants.filter((g) => g.category === activeCategory);
+  }, [result, activeCategory]);
 
   const freeGrants = filteredGrants.slice(0, FREE_LIMIT);
   const lockedCount = filteredGrants.length - FREE_LIMIT;
+
+  if (!result) return null;
 
   return (
     <div className="bg-[#f8fafc] min-h-screen">
