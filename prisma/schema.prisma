@@ -1,26 +1,26 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                     String   @id @default(cuid())
-  phone                  String   @unique
-  password               String
-  businessRegNumber      String   @unique
-  businessType           String
-  industry               String
-  sector                 String   @default("")
-  establishedDate        String
-  address                String
-  representativeName     String   @default("")
-  companyName            String   @default("")
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  phone              String   @unique
+  password           String
+  businessRegNumber  String   @unique
+  businessType       String
+  industry           String
+  sector             String   @default("")
+  establishedDate    String
+  address            String
+  representativeName String   @default("")
+  companyName        String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model OtpCode {
