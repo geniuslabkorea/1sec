@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -260,8 +260,22 @@ export default function ResultPage() {
 
   if (!result) return null;
 
-  const freeGrants = result.grants.slice(0, FREE_LIMIT);
-  const lockedCount = result.grants.length - FREE_LIMIT;
+  const [activeCategory, setActiveCategory] = useState("전체");
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(result.grants.map((g) => g.category)));
+    return ["전체", ...cats];
+  }, [result.grants]);
+
+  const filteredGrants = useMemo(() =>
+    activeCategory === "전체"
+      ? result.grants
+      : result.grants.filter((g) => g.category === activeCategory),
+    [result.grants, activeCategory]
+  );
+
+  const freeGrants = filteredGrants.slice(0, FREE_LIMIT);
+  const lockedCount = filteredGrants.length - FREE_LIMIT;
 
   return (
     <div className="bg-[#f8fafc] min-h-screen">
@@ -321,12 +335,48 @@ export default function ResultPage() {
           </div>
 
           {/* 지원금 목록 */}
-          <div className="lg:col-span-2 space-y-4">
-            {freeGrants.map((grant, i) => (
-              <GrantCard key={grant.id} grant={grant} index={i} />
-            ))}
+          <div className="lg:col-span-2">
+            {/* 카테고리 필터 */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat;
+                const color = CATEGORY_COLORS[cat];
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all border
+                      ${isActive
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
+                      }
+                      ${!isActive && color ? color.replace("bg-", "hover:bg-") : ""}
+                    `}
+                  >
+                    {cat}
+                    {cat !== "전체" && (
+                      <span className={`ml-1.5 ${isActive ? "text-white/70" : "text-slate-400"}`}>
+                        {result.grants.filter((g) => g.category === cat).length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            {lockedCount > 0 && <LockedSection count={lockedCount} />}
+            <div className="space-y-4">
+              {freeGrants.map((grant, i) => (
+                <GrantCard key={grant.id} grant={grant} index={i} />
+              ))}
+
+              {lockedCount > 0 && <LockedSection count={lockedCount} />}
+
+              {freeGrants.length === 0 && (
+                <div className="text-center py-16 text-slate-400 font-semibold">
+                  해당 카테고리의 지원금이 없습니다.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
